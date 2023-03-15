@@ -80,4 +80,90 @@ The interval with the highest average steps = `r max_interval`
 
 ## Imputing missing values
 
+### Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+```{r}
+sum_missing_values <- sum(is.na(act_data$steps))  # for the steps data
+```
+
+Number of rows that have missing values for steps: `r sum_missing_values`
+
+### Create a new dataset that is equal to the original dataset but with the missing data filled in. 
+
+Strategy: Filling in the missing values with mean of that interval across the period
+
+```{r}
+## remove NAs from data set by replacing the NA's
+imputed_data <- act_data %>%
+      mutate(new_steps = ifelse(is.na(steps), num_interval_data$interval_steps[num_interval_data$interval == interval], steps) )
+
+## get insight into the resulting data set
+str(imputed_data)
+summary(imputed_data)
+head(imputed_data)
+```
+
+### Histogram
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. 
+
+```{r}
+num_day_imputed_data <- imputed_data %>%
+      group_by(date) %>%
+      summarise(daily_steps = sum(new_steps))
+## get insight into the resulting data set
+str(num_day_imputed_data)
+summary(num_day_imputed_data)
+head(num_day_imputed_data)
+
+plot(num_day_imputed_data, type = "h", ylab = "number of steps (with imputed data)", xlab = "date", main = "total steps by day")
+
+```
+
+Calcuting the mean and median
+
+```{r}
+# mean and median calculated with imputed data
+mean_imputed_daily <- as.integer(mean(num_day_imputed_data$daily_steps)) 
+median_imputed_daily <- as.integer(median(num_day_imputed_data$daily_steps))
+
+# difference with original data
+div_mean <- (1 - mean_imputed_daily / mean_daily)
+div_median <- (1 - median_imputed_daily / median_daily)
+```
+
+Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+Mean = `r mean_daily`
+
+Mean = `r mean_imputed_daily`
+
+Change Mean = `r div_mean`
+
+Median = `r median_daily`
+
+Median = `r median_imputed_daily`
+
+Change Median = `r div_median`
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+# using data set "imputed_data" as source
+
+category_var <- as.factor(c("weekday", "weekend"))
+print(category_var)
+str(category_var)
+
+weekenddays <-c("Sunday", "Saturday")
+
+imputed_data_categorised <- imputed_data %>%
+      mutate(day_of_week = weekdays(date)) %>%
+      #mutate(category = ifelse((day_of_week %in% weekenddays), as.factor(category_var[2]), as.factor(category_var[1])))
+      mutate(category = factor(ifelse((day_of_week %in% weekenddays), "weekend", "weekday")))
+
+str(imputed_data_categorised)
+summary(imputed_data_categorised)
+head(imputed_data_categorised)
+```
+
+
