@@ -1,24 +1,34 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
+title: "Reproducible Research: Peer Assessment 1 - Christof"
 output: 
   html_document:
     keep_md: true
 ---
+# Introduction
+
+Assignment for module 2 of reproducible research course
+
+Date: 2023-03-15
+By: Christof
 
 ## Loading and preprocessing the data
 
 ```{r}
 act_data <- read.csv("activity.csv", header = TRUE, sep = ",")
 act_data$date <- strptime(act_data$date, "%Y-%m-%d") # transform to a date
+```
+
+### for checking the data
+
+```{r}
 str(act_data)
 summary(act_data)
 head(act_data)
-
 ```
 
-## What is mean total number of steps taken per day?
+## What is the mean total number of steps taken per day?
 
-Remove the NAs from the data set and aggregate steps per day
+### Remove the NAs from the data set and aggregate steps per day
 
 ```{r}
 ## load package
@@ -28,19 +38,16 @@ num_day_data <- act_data %>%
       group_by(date) %>%
       filter(steps != is.na(steps)) %>%
       summarise(daily_steps = sum(steps))
-## get insight into the resulting data set
-str(num_day_data)
-summary(num_day_data)
-head(num_day_data)
 ```
 
-Histogram of total of steps per day without NAs
+### Histogram of total of steps per day without NAs
 
 ```{r}
 plot(num_day_data, type = "h", ylab = "number of steps", xlab = "date", main = "total steps by day")
 ```
 
-Calcuting the mean and median
+### Calcuting the mean and median
+
 ```{r}
 mean_daily <- as.integer(mean(num_day_data$daily_steps))
 median_daily <- as.integer(median(num_day_data$daily_steps))
@@ -52,22 +59,19 @@ Median = `r median_daily`
 
 ## What is the average daily activity pattern?
 
-Create a time series line plot with x-axis 5 minute interval and y-axis 
+### Create a time series line plot with x-axis 5 minute interval and y-axis
+
 ```{r}
 ## remove NAs from data set & averge steps per interval
 num_interval_data <- act_data %>%
       group_by(interval) %>%
       filter(steps != is.na(steps)) %>%
       summarise(interval_steps = mean(steps))
-## get insight into the resulting data set
-str(num_interval_data)
-summary(num_interval_data)
-head(num_interval_data)
-
-plot(num_interval_data$interval, num_interval_data$interval_steps, type = "l")
+## create the plot
+plot(num_interval_data$interval, num_interval_data$interval_steps, type = "l", xlab = "interval", ylab = "number of steps")
 ```
 
-Determine the 5 minute interval with the highest average steps
+### Determine the 5 minute interval with the highest average steps
 
 ```{r}
 max_value <- max(num_interval_data$interval_steps)
@@ -86,35 +90,29 @@ The interval with the highest average steps = `r max_interval`
 sum_missing_values <- sum(is.na(act_data$steps))  # for the steps data
 ```
 
-Number of rows that have missing values for steps: `r sum_missing_values`
+Number of rows that have missing values for steps: `r sum_missing_values` (can be verified with the summary of act_data)
 
-### Create a new dataset that is equal to the original dataset but with the missing data filled in. 
+### Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
 Strategy: Filling in the missing values with mean of that interval across the period
 
 ```{r}
 ## remove NAs from data set by replacing the NA's
 imputed_data <- act_data %>%
-      mutate(new_steps = ifelse(is.na(steps), num_interval_data$interval_steps[num_interval_data$interval == interval], steps) )
-
-## get insight into the resulting data set
-str(imputed_data)
-summary(imputed_data)
-head(imputed_data)
+      mutate(new_steps = ifelse(is.na(steps), num_interval_data$interval_steps[num_interval_data$interval %in% interval], steps))
 ```
 
 ### Histogram
-Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. 
+
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
 
 ```{r}
+## gather the data for the plot
 num_day_imputed_data <- imputed_data %>%
       group_by(date) %>%
       summarise(daily_steps = sum(new_steps))
-## get insight into the resulting data set
-str(num_day_imputed_data)
-summary(num_day_imputed_data)
-head(num_day_imputed_data)
 
+#create the plot
 plot(num_day_imputed_data, type = "h", ylab = "number of steps (with imputed data)", xlab = "date", main = "total steps by day")
 
 ```
@@ -133,37 +131,32 @@ div_median <- (1 - median_imputed_daily / median_daily)
 
 Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-Mean = `r mean_daily`
+| Data set | With NA's removed |         Imputed          |     Change     |
+|:--------:|:-----------------:|:------------------------:|:--------------:|
+|   Mean   |  `r mean_daily`   |  `r mean_imputed_daily`  |  `r div_mean`  |
+|  Median  | `r median_daily`  | `r median_imputed_daily` | `r div_median` |
+|          |                   |                          |                |
 
-Mean = `r mean_imputed_daily`
-
-Change Mean = `r div_mean`
-
-Median = `r median_daily`
-
-Median = `r median_imputed_daily`
-
-Change Median = `r div_median`
+The impact on the mean - for me - is significant. After a quick look the cause is likely that there are days for which many intervals have NA values. As a result these dates get a significant increased number of steps as result of the imputation. For example 1st of Oct 2012 only has NAs.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
+### categorising the data using the imputed data set
+
 ```{r}
 # using data set "imputed_data" as source
-
-category_var <- as.factor(c("weekday", "weekend"))
-print(category_var)
-str(category_var)
-
 weekenddays <-c("Sunday", "Saturday")
-
 imputed_data_categorised <- imputed_data %>%
       mutate(day_of_week = weekdays(date)) %>%
-      #mutate(category = ifelse((day_of_week %in% weekenddays), as.factor(category_var[2]), as.factor(category_var[1])))
-      mutate(category = factor(ifelse((day_of_week %in% weekenddays), "weekend", "weekday")))
-
-str(imputed_data_categorised)
-summary(imputed_data_categorised)
-head(imputed_data_categorised)
+      mutate(category = factor(ifelse((day_of_week %in% weekenddays), "weekend", "weekday"))) %>%
+      group_by(category, interval)  %>%
+      summarise(daily_steps = sum(new_steps), .groups = 'keep')
 ```
 
+### creating a panel plot using weekend and weekdays based on factor variable "category"
 
+```{r}
+library(lattice)
+xyplot(daily_steps ~ interval | category, data = imputed_data_categorised, layout = c(1, 2), type = "l", xlab = "Interval", ylab = "number of steps (with imputed data)")
+
+```
