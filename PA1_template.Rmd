@@ -4,7 +4,7 @@ output:
   html_document:
     keep_md: true
 ---
-# Introduction
+## Introduction
 
 Assignment for module 2 of reproducible research course
 
@@ -13,6 +13,17 @@ By: Christof
 
 ## Loading and preprocessing the data
 
+### retrieve file
+
+```{r}
+file_url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+temp <- tempfile()
+download.file(file_url, temp)
+unzip(temp, "activity.csv")
+unlink(temp)
+```
+
+### read the data
 ```{r}
 act_data <- read.csv("activity.csv", header = TRUE, sep = ",")
 act_data$date <- strptime(act_data$date, "%Y-%m-%d") # transform to a date
