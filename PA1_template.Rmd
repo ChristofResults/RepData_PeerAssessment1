@@ -5,21 +5,79 @@ output:
     keep_md: true
 ---
 
-
 ## Loading and preprocessing the data
 
+```{r}
+act_data <- read.csv("activity.csv", header = TRUE, sep = ",")
+act_data$date <- strptime(act_data$date, "%Y-%m-%d") # transform to a date
+str(act_data)
+summary(act_data)
+head(act_data)
 
+```
 
 ## What is mean total number of steps taken per day?
 
+Remove the NAs from the data set and aggregate steps per day
 
+```{r}
+## load package
+library(dplyr)
+## remove NAs from data set & aggregate steps per day
+num_day_data <- act_data %>%
+      group_by(date) %>%
+      filter(steps != is.na(steps)) %>%
+      summarise(daily_steps = sum(steps))
+## get insight into the resulting data set
+str(num_day_data)
+summary(num_day_data)
+head(num_day_data)
+```
+
+Histogram of total of steps per day without NAs
+
+```{r}
+plot(num_day_data, type = "h", ylab = "number of steps", xlab = "date", main = "total steps by day")
+```
+
+Calcuting the mean and median
+```{r}
+mean_daily <- as.integer(mean(num_day_data$daily_steps))
+median_daily <- as.integer(median(num_day_data$daily_steps))
+```
+
+Mean = `r mean_daily`
+
+Median = `r median_daily`
 
 ## What is the average daily activity pattern?
 
+Create a time series line plot with x-axis 5 minute interval and y-axis 
+```{r}
+## remove NAs from data set & averge steps per interval
+num_interval_data <- act_data %>%
+      group_by(interval) %>%
+      filter(steps != is.na(steps)) %>%
+      summarise(interval_steps = mean(steps))
+## get insight into the resulting data set
+str(num_interval_data)
+summary(num_interval_data)
+head(num_interval_data)
 
+plot(num_interval_data$interval, num_interval_data$interval_steps, type = "l")
+```
+
+Determine the 5 minute interval with the highest average steps
+
+```{r}
+max_value <- max(num_interval_data$interval_steps)
+max_interval <- num_interval_data$interval[num_interval_data$interval_steps == max_value]
+```
+
+Highest average steps in any interval = `r max_value`
+
+The interval with the highest average steps = `r max_interval`
 
 ## Imputing missing values
-
-
 
 ## Are there differences in activity patterns between weekdays and weekends?
